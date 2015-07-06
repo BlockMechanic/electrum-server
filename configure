@@ -107,16 +107,16 @@ fi
 chown $user:$user $logfile
 
 
-bitcoind_user=$(read_config "bitcoind_user")
-if ! [ "$bitcoind_user" ]; then
-    read -p "rpcuser (from your bitcoin.conf file): " -r
-    write_config "bitcoind_user" $REPLY
+bitcreditd_user=$(read_config "bitcreditd_user")
+if ! [ "$bitcreditd_user" ]; then
+    read -p "rpcuser (from your bitcredit.conf file): " -r
+    write_config "bitcreditd_user" $REPLY
 fi
 
-bitcoind_password=$(read_config "bitcoind_password")
-if ! [ "$bitcoind_password" ]; then
-    read -p "rpcpassword (from your bitcoin.conf file): " -r
-    write_config "bitcoind_password" $REPLY
+bitcreditd_password=$(read_config "bitcreditd_password")
+if ! [ "$bitcreditd_password" ]; then
+    read -p "rpcpassword (from your bitcredit.conf file): " -r
+    write_config "bitcreditd_password" $REPLY
 fi
 
 

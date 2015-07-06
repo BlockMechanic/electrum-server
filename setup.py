@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="electrum-server",
-    version="1.0",
+    version="0.9",
     scripts=['run_electrum_server','electrum-server'],
     install_requires=['plyvel','jsonrpclib', 'irc>=11'],
     package_dir={

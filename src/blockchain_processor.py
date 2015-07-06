@@ -53,11 +53,11 @@ class BlockchainProcessor(Processor):
 
         self.dblock = threading.Lock()
 
-        self.bitcoind_url = 'http://%s:%s@%s:%s/' % (
-            config.get('bitcoind', 'bitcoind_user'),
-            config.get('bitcoind', 'bitcoind_password'),
-            config.get('bitcoind', 'bitcoind_host'),
-            config.get('bitcoind', 'bitcoind_port'))
+        self.bitcreditd_url = 'http://%s:%s@%s:%s/' % (
+            config.get('bitcreditd', 'bitcreditd_user'),
+            config.get('bitcreditd', 'bitcreditd_password'),
+            config.get('bitcreditd', 'bitcreditd_host'),
+            config.get('bitcreditd', 'bitcreditd_port'))
 
         self.sent_height = 0
         self.sent_header = None
@@ -71,7 +71,7 @@ class BlockchainProcessor(Processor):
 
     def do_catch_up(self):
 
-        self.header = self.block2header(self.bitcoind('getblock', [self.storage.last_hash]))
+        self.header = self.block2header(self.bitcreditd('getblock', [self.storage.last_hash]))
         self.header['utxo_root'] = self.storage.get_root_hash().encode('hex')
         self.catch_up(sync=False)
         print_log("Blockchain is up to date.")
@@ -81,7 +81,7 @@ class BlockchainProcessor(Processor):
         while not self.shared.stopped():
             self.main_iteration()
             if self.shared.paused():
-                print_log("bitcoind is responding")
+                print_log("bitcreditd is responding")
                 self.shared.unpause()
             time.sleep(10)
 
@@ -101,27 +101,27 @@ class BlockchainProcessor(Processor):
             s += k+':'+"%.2f"%v+' '
         print_log(s)
 
-    def wait_on_bitcoind(self):
+    def wait_on_bitcreditd(self):
         self.shared.pause()
         time.sleep(10)
         if self.shared.stopped():
             # this will end the thread
             raise
 
-    def bitcoind(self, method, params=[]):
+    def bitcreditd(self, method, params=[]):
         postdata = dumps({"method": method, 'params': params, 'id': 'jsonrpc'})
         while True:
             try:
-                respdata = urllib.urlopen(self.bitcoind_url, postdata).read()
+                respdata = urllib.urlopen(self.bitcreditd_url, postdata).read()
             except:
-                print_log("cannot reach bitcoind...")
-                self.wait_on_bitcoind()
+                print_log("cannot reach bitcreditd...")
+                self.wait_on_bitcreditd()
             else:
                 r = loads(respdata)
                 if r['error'] is not None:
                     if r['error'].get('code') == -28:
-                        print_log("bitcoind still warming up...")
-                        self.wait_on_bitcoind()
+                        print_log("bitcreditd still warming up...")
+                        self.wait_on_bitcreditd()
                         continue
                     raise BaseException(r['error'])
                 break
@@ -137,11 +137,13 @@ class BlockchainProcessor(Processor):
             "timestamp": b.get('time'),
             "bits": int(b.get('bits'), 16),
             "nonce": b.get('nonce'),
+            "BirthdayA": b.get('BirthdayA'),
+            "BirthdayB": b.get('BirthdayB'),
         }
 
     def get_header(self, height):
-        block_hash = self.bitcoind('getblockhash', [height])
-        b = self.bitcoind('getblock', [block_hash])
+        block_hash = self.bitcreditd('getblockhash', [height])
+        b = self.bitcreditd('getblock', [block_hash])
         return self.block2header(b)
 
     def init_headers(self, db_height):
@@ -149,7 +151,7 @@ class BlockchainProcessor(Processor):
         self.headers_filename = os.path.join(self.headers_path, 'blockchain_headers')
 
         if os.path.exists(self.headers_filename):
-            height = os.path.getsize(self.headers_filename)/80 - 1   # the current height
+            height = os.path.getsize(self.headers_filename)/88 - 1   # the current height
             if height > 0:
                 prev_hash = self.hash_header(self.read_header(height))
             else:
@@ -191,16 +193,16 @@ class BlockchainProcessor(Processor):
     def read_header(self, block_height):
         if os.path.exists(self.headers_filename):
             with open(self.headers_filename, 'rb') as f:
-                f.seek(block_height * 80)
-                h = f.read(80)
-            if len(h) == 80:
+                f.seek(block_height * 88)
+                h = f.read(88)
+            if len(h) == 88:
                 h = header_from_string(h)
                 return h
 
     def read_chunk(self, index):
         with open(self.headers_filename, 'rb') as f:
-            f.seek(index*2016*80)
-            chunk = f.read(2016*80)
+            f.seek(index*88)
+            chunk = f.read(88)
         return chunk.encode('hex')
 
     def write_header(self, header, sync=True):
@@ -225,7 +227,7 @@ class BlockchainProcessor(Processor):
         if not self.headers_data:
             return
         with open(self.headers_filename, 'rb+') as f:
-            f.seek(self.headers_offset*80)
+            f.seek(self.headers_offset*88)
             f.write(self.headers_data)
         self.headers_data = ''
 
@@ -241,7 +243,7 @@ class BlockchainProcessor(Processor):
 
     def get_mempool_transaction(self, txid):
         try:
-            raw_tx = self.bitcoind('getrawtransaction', [txid, 0])
+            raw_tx = self.bitcreditd('getrawtransaction', [txid, 0])
         except:
             return None
 
@@ -308,8 +310,8 @@ class BlockchainProcessor(Processor):
 
     def get_merkle(self, tx_hash, height):
 
-        block_hash = self.bitcoind('getblockhash', [height])
-        b = self.bitcoind('getblock', [block_hash])
+        block_hash = self.bitcreditd('getblockhash', [height])
+        b = self.bitcreditd('getblock', [block_hash])
         tx_list = b.get('tx')
         tx_pos = tx_list.index(tx_hash)
 
@@ -338,16 +340,16 @@ class BlockchainProcessor(Processor):
     def add_to_history(self, addr, tx_hash, tx_pos, tx_height):
         # keep it sorted
         s = self.serialize_item(tx_hash, tx_pos, tx_height) + 40*chr(0)
-        assert len(s) == 80
+        assert len(s) == 88
 
         serialized_hist = self.batch_list[addr]
 
-        l = len(serialized_hist)/80
+        l = len(serialized_hist)/88
         for i in range(l-1, -1, -1):
-            item = serialized_hist[80*i:80*(i+1)]
+            item = serialized_hist[88*i:88*(i+1)]
             item_height = int(rev_hex(item[36:39].encode('hex')), 16)
             if item_height <= tx_height:
-                serialized_hist = serialized_hist[0:80*(i+1)] + s + serialized_hist[80*(i+1):]
+                serialized_hist = serialized_hist[0:88*(i+1)] + s + serialized_hist[88*(i+1):]
                 break
         else:
             serialized_hist = s + serialized_hist
@@ -412,7 +414,7 @@ class BlockchainProcessor(Processor):
 
         # add undo info
         if not revert:
-            self.storage.write_undo_info(block_height, self.bitcoind_height, undo_info)
+            self.storage.write_undo_info(block_height, self.bitcreditd_height, undo_info)
 
         # add the max
         self.storage.db_undo.put('height', repr( (block_hash, block_height, self.storage.db_version) ))
@@ -541,7 +543,7 @@ class BlockchainProcessor(Processor):
 
         elif method == 'blockchain.transaction.broadcast':
             try:
-                txo = self.bitcoind('sendrawtransaction', params)
+                txo = self.bitcreditd('sendrawtransaction', params)
                 print_log("sent tx:", txo)
                 result = txo
             except BaseException, e:
@@ -558,11 +560,11 @@ class BlockchainProcessor(Processor):
 
         elif method == 'blockchain.transaction.get':
             tx_hash = params[0]
-            result = self.bitcoind('getrawtransaction', [tx_hash, 0])
+            result = self.bitcreditd('getrawtransaction', [tx_hash, 0])
 
         elif method == 'blockchain.estimatefee':
             num = int(params[0])
-            result = self.bitcoind('estimatefee', [num])
+            result = self.bitcreditd('estimatefee', [num])
 
         else:
             raise BaseException("unknown method:%s" % method)
@@ -574,7 +576,7 @@ class BlockchainProcessor(Processor):
 
 
     def getfullblock(self, block_hash):
-        block = self.bitcoind('getblock', [block_hash])
+        block = self.bitcreditd('getblock', [block_hash])
 
         rawtxreq = []
         i = 0
@@ -588,9 +590,9 @@ class BlockchainProcessor(Processor):
 
         postdata = dumps(rawtxreq)
         try:
-            respdata = urllib.urlopen(self.bitcoind_url, postdata).read()
+            respdata = urllib.urlopen(self.bitcreditd_url, postdata).read()
         except:
-            logger.error("bitcoind error (getfullblock)",exc_info=True)
+            logger.error("bitcreditd error (getfullblock)",exc_info=True)
             self.shared.stop()
 
         r = loads(respdata)
@@ -598,7 +600,7 @@ class BlockchainProcessor(Processor):
         for ir in r:
             if ir['error'] is not None:
                 self.shared.stop()
-                print_log("Error: make sure you run bitcoind with txindex=1; use -reindex if needed.")
+                print_log("Error: make sure you run bitcreditd with txindex=1; use -reindex if needed.")
                 raise BaseException(ir['error'])
             rawtxdata.append(ir['result'])
         block['tx'] = rawtxdata
@@ -612,10 +614,10 @@ class BlockchainProcessor(Processor):
             self.mtime('')
 
             # are we done yet?
-            info = self.bitcoind('getinfo')
-            self.bitcoind_height = info.get('blocks')
-            bitcoind_block_hash = self.bitcoind('getblockhash', [self.bitcoind_height])
-            if self.storage.last_hash == bitcoind_block_hash:
+            info = self.bitcreditd('getinfo')
+            self.bitcreditd_height = info.get('blocks')
+            bitcreditd_block_hash = self.bitcreditd('getblockhash', [self.bitcreditd_height])
+            if self.storage.last_hash == bitcreditd_block_hash:
                 self.up_to_date = True
                 break
 
@@ -625,7 +627,7 @@ class BlockchainProcessor(Processor):
             # not done..
             self.up_to_date = False
             try:
-                next_block_hash = self.bitcoind('getblockhash', [self.storage.height + 1])
+                next_block_hash = self.bitcreditd('getblockhash', [self.storage.height + 1])
                 next_block = self.getfullblock(next_block_hash)
             except BaseException, e:
                 revert = True
@@ -670,7 +672,7 @@ class BlockchainProcessor(Processor):
                     prev_root_hash = None
 
 
-        self.header = self.block2header(self.bitcoind('getblock', [self.storage.last_hash]))
+        self.header = self.block2header(self.bitcreditd('getblock', [self.storage.last_hash]))
         self.header['utxo_root'] = self.storage.get_root_hash().encode('hex')
 
         if self.shared.stopped(): 

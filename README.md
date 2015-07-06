@@ -1,7 +1,7 @@
 Electrum-server for the Electrum client
 =========================================
 
-  * Author: Thomas Voegtlin (ThomasV on the bitcointalk forum)
+  * Author: Thomas Voegtlin (ThomasV on the bitcredittalk forum)
   * Language: Python
 
 Features
@@ -11,7 +11,7 @@ Features
     described by Alan Reiner (see the 'ultimate blockchain
     compression' thread in the Bitcointalk forum)
 
-  * The server requires bitcoind, leveldb and plyvel
+  * The server requires bitcreditd, leveldb and plyvel
 
   * The server code is open source. Anyone can run a server, removing
     single points of failure concerns.

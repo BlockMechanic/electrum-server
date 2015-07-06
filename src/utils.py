@@ -27,8 +27,8 @@ __b58base = len(__b58chars)
 
 global PUBKEY_ADDRESS
 global SCRIPT_ADDRESS
-PUBKEY_ADDRESS = 0
-SCRIPT_ADDRESS = 5
+PUBKEY_ADDRESS = 12
+SCRIPT_ADDRESS = 8
 
 def rev_hex(s):
     return s.decode('hex')[::-1].encode('hex')
@@ -70,8 +70,9 @@ def header_to_string(res):
         + rev_hex(res.get('merkle_root')) \
         + int_to_hex(int(res.get('timestamp')), 4) \
         + int_to_hex(int(res.get('bits')), 4) \
-        + int_to_hex(int(res.get('nonce')), 4)
-
+        + int_to_hex(int(res.get('nonce')), 4) \
+        + int_to_hex(int(res.get('BirthdayA')), 4) \
+        + int_to_hex(int(res.get('BirthdayB')), 4)
 
 def hex_to_int(s):
     return int('0x' + s[::-1].encode('hex'), 16)
@@ -85,6 +86,8 @@ def header_from_string(s):
         'timestamp': hex_to_int(s[68:72]),
         'bits': hex_to_int(s[72:76]),
         'nonce': hex_to_int(s[76:80]),
+        'BirthdayA': hex_to_int(s[80:84]),
+        'BirthdayB': hex_to_int(s[84:88]),
     }
 
 
@@ -127,7 +130,7 @@ def hash_160_to_script_address(h160):
     return hash_160_to_address(h160, SCRIPT_ADDRESS)
 
 
-def hash_160_to_address(h160, addrtype = 0):
+def hash_160_to_address(h160, addrtype = 12):
     """ Checks if the provided hash is actually 160bits or 20 bytes long and returns the address, else None
     """
     if h160 is None or len(h160) is not 20:
@@ -237,7 +240,7 @@ def init_logger(logfile):
     hdlr = logging.handlers.WatchedFileHandler(logfile)
     formatter = logging.Formatter('%(asctime)s %(message)s', "[%d/%m/%Y-%H:%M:%S]")
     hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr) 
+    logger.addHandler(hdlr)
     logger.setLevel(logging.INFO)
 
 

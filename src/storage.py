@@ -8,7 +8,7 @@ from processor import print_log, logger
 from utils import bc_address_to_hash_160, hash_160_to_pubkey_address, hex_to_int, int_to_hex, Hash
 
 global GENESIS_HASH
-GENESIS_HASH = '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f'
+GENESIS_HASH = '0df7a63994eb66317fd82c16ee5160adb83acb45f72d5bf359b88e635d7301b8'
 
 """
 Patricia tree for hashing unspents
@@ -66,7 +66,7 @@ class Storage(object):
         print_log("UTXO tree root hash:", self.root_hash.encode('hex'))
         print_log("Coins in database:", v)
 
-    # convert between bitcoin addresses and 20 bytes keys used for storage. 
+    # convert between bitcredit addresses and 20 bytes keys used for storage. 
     def address_to_key(self, addr):
         return bc_address_to_hash_160(addr)
 
@@ -161,8 +161,8 @@ class Storage(object):
         return eval(s)
 
 
-    def write_undo_info(self, height, bitcoind_height, undo_info):
-        if height > bitcoind_height - 100 or self.test_reorgs:
+    def write_undo_info(self, height, bitcreditd_height, undo_info):
+        if height > bitcreditd_height - 100 or self.test_reorgs:
             self.db_undo.put("undo_info_%d" % (height % 100), repr(undo_info))
 
 

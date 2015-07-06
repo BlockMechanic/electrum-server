@@ -197,12 +197,12 @@ class Enumeration:
         return self.reverseLookup[value]
 
 
-# This function comes from bitcointools, bct-LICENSE.txt.
+# This function comes from bitcredittools, bct-LICENSE.txt.
 def long_hex(bytes):
     return bytes.encode('hex_codec')
 
 
-# This function comes from bitcointools, bct-LICENSE.txt.
+# This function comes from bitcredittools, bct-LICENSE.txt.
 def short_hex(bytes):
     t = bytes.encode('hex_codec')
     if len(t) < 11:
