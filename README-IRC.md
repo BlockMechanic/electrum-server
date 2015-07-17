@@ -40,5 +40,5 @@ Please check whether port numbers are cut off at the end
 
 
 Example of port forwarding using iptables:
-iptables -t nat -A PREROUTING -p tcp --dport 110 -j REDIRECT --to-ports 50002
+iptables -t nat -A PREROUTING -p tcp --dport 110 -j REDIRECT --to-ports 70002
 
