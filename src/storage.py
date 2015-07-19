@@ -105,7 +105,7 @@ class Storage(object):
     def listunspent(self, addr):
         key = self.address_to_key(addr)
         if key is None:
-            raise BaseException('Invalid Bitcoin address', addr)
+            raise BaseException('Invalid Bitcredit address', addr)
 
         out = []
         for k, v in self.db_utxo.iterator(start=key):
